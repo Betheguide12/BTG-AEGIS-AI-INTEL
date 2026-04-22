@@ -53,6 +53,7 @@ export default function App() {
   const [currentAlert, setCurrentAlert] = useState<IntelLog | null>(null);
   const [selectedLog, setSelectedLog] = useState<IntelLog | null>(null);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [filterOSINT, setFilterOSINT] = useState(false);
   
   const mapRef = useRef<HTMLDivElement>(null);
 
@@ -64,9 +65,27 @@ export default function App() {
   }, []);
 
   const requestNotificationPermission = async () => {
-    if ('Notification' in window) {
+    console.log("[AEGIS] Requesting Notification permission...");
+    if (!('Notification' in window)) {
+      alert("This browser does not support desktop notifications.");
+      return;
+    }
+    
+    try {
       const permission = await Notification.requestPermission();
+      console.log("[AEGIS] Permission result:", permission);
       setNotificationPermission(permission);
+      
+      if (permission === 'denied') {
+        alert("Notifications are BLOCKED. Please enable them in your browser site settings (click the lock icon in the URL bar).");
+      } else if (permission === 'granted') {
+        new Notification("AEGIS SYSTEM LINKED", {
+          body: "Neural notifications now operational.",
+          icon: "/favicon.ico"
+        });
+      }
+    } catch (err) {
+      console.error("[AEGIS] Notif error:", err);
     }
   };
 
@@ -339,14 +358,36 @@ export default function App() {
           ${activeTab === 'INTEL' ? 'flex-1 translate-x-0' : 'hidden lg:flex lg:w-72 xl:w-80'}
         `}>
           <div className="flex-1 glass-card p-3 flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <Radio className="w-3 h-3 text-aegis-cyan" />
-                <span className="text-[10px] font-mono font-bold text-white uppercase tracking-[0.2em]">Intel Stream</span>
-              </div>
-              <button onClick={() => aegisCron.start()} className="p-1 hover:bg-white/5 rounded transition-colors group">
-                <Radar className="w-3 h-3 text-slate-600 group-hover:text-aegis-cyan" />
-              </button>
+            <div className="flex flex-col gap-2 mb-3 shrink-0">
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-2">
+                   <Radio className="w-3 h-3 text-aegis-cyan" />
+                   <span className="text-[10px] font-mono font-bold text-white uppercase tracking-[0.2em]">Intel Stream</span>
+                 </div>
+                 <button onClick={() => aegisCron.start()} className="p-1 hover:bg-white/5 rounded transition-colors group">
+                   <Radar className="w-3 h-3 text-slate-600 group-hover:text-aegis-cyan" />
+                 </button>
+               </div>
+               
+               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                 <button 
+                  onClick={() => setFilterOSINT(false)}
+                  className={`px-2 py-0.5 text-[7px] font-mono border transition-all ${
+                    !filterOSINT ? 'bg-aegis-cyan/20 border-aegis-cyan text-white' : 'border-white/10 text-slate-500 hover:text-white'
+                  }`}
+                 >
+                   OMNI_SYNC
+                 </button>
+                 <button 
+                  onClick={() => setFilterOSINT(true)}
+                  className={`px-2 py-0.5 text-[7px] font-mono border transition-all flex items-center gap-1 ${
+                    filterOSINT ? 'bg-emerald-500/20 border-emerald-500 text-white' : 'border-white/10 text-slate-500 hover:text-white'
+                  }`}
+                 >
+                   <Globe className="w-2.5 h-2.5" />
+                   OSINT_ONLY
+                 </button>
+               </div>
             </div>
             
             <div className="flex-1 overflow-y-auto space-y-1 pr-1 scrollbar-hide">
@@ -357,8 +398,11 @@ export default function App() {
                     <span className="text-[8px] font-mono text-center tracking-widest uppercase">Connecting...</span>
                   </div>
                 ) : (
-                  logs.map((log) => (
-                    <motion.div 
+                  logs
+                  .filter(log => !filterOSINT || log.source.includes('OSINT'))
+                  .map((log) => (
+                    <motion.div
+ 
                       key={log.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -575,7 +619,18 @@ export default function App() {
                   <p>&gt; SCAN_DARK_SENT... OK</p>
                   <AnimatePresence>
                     {logs.slice(0, 4).map(l => (
-                      <p key={l.id} className="text-white truncate">&gt; INGEST: {l.source}</p>
+                      <div key={l.id} className="flex gap-2 items-center text-white overflow-hidden">
+                        <span className="shrink-0 text-aegis-cyan/40 font-bold">&gt;</span>
+                        <span className={`shrink-0 px-1 rounded-[1px] text-[7px] font-bold ${
+                          l.source.includes('SIGINT') ? 'bg-blue-500/20 text-blue-400' :
+                          l.source.includes('CYBINT') ? 'bg-purple-500/20 text-purple-400' :
+                          l.source.includes('OSINT') ? 'bg-emerald-500/20 text-emerald-400' :
+                          'bg-slate-500/20 text-slate-400'
+                        }`}>
+                          {l.source}
+                        </span>
+                        <span className="truncate flex-1">{l.message}</span>
+                      </div>
                     ))}
                   </AnimatePresence>
                 </div>

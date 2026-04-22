@@ -24,7 +24,7 @@ export async function getRealTimeIntel() {
       const useTools = retryCount < 2; // Try without tools on the last retry
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: "IDENTITY: AEGIS INTEL INGESTION. TASK: List exactly 5 high-impact breaking global security, cyber-threat, or geopolitical events from the last 12 hours. FORMAT: Clean JSON array. FIELDS: 'source' (SIGINT/OSINT/CYBINT), 'message' (tactical summary), 'severity' (LOW/MEDIUM/HIGH/CRITICAL), 'timestamp', 'location' (object with 'lat' and 'lng').",
+        contents: "IDENTITY: AEGIS INTEL INGESTION. TASK: List exactly 5 high-impact breaking global security, cyber-threat, or geopolitical events from the last 12 hours. SOURCES: Prioritize OSINT (Social Media/Breaking News), CYBINT (Cyber Attacks), and SIGINT (Signals/Satellite). FORMAT: Clean JSON array. FIELDS: 'source' (SIGINT/OSINT/CYBINT/GEOINT/HUMINT), 'message' (tactical summary), 'severity' (LOW/MEDIUM/HIGH/CRITICAL), 'timestamp', 'location' (object with 'lat' and 'lng').",
         config: {
           tools: useTools ? [{ googleSearch: {} }] : [],
           responseMimeType: "application/json",
