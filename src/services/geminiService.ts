@@ -5,10 +5,11 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const keyVar = process.env.GEMINI_API_KEY || (process as any).env?.Ge || (process as any).env?.GE || "";
+const ai = new GoogleGenAI({ apiKey: keyVar });
 
 export async function getRealTimeIntel() {
-  if (!process.env.GEMINI_API_KEY) return null;
+  if (!keyVar) return null;
 
   try {
     const response = await ai.models.generateContent({
@@ -49,7 +50,7 @@ export async function getRealTimeIntel() {
 }
 
 export async function getOracleBriefing(context: string) {
-  if (!process.env.GEMINI_API_KEY) return "AEGIS OFFLINE";
+  if (!keyVar) return "AEGIS OFFLINE";
 
   try {
     const response = await ai.models.generateContent({
