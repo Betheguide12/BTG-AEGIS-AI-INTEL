@@ -48,6 +48,7 @@ class AegisCron {
   private async execute() {
     try {
       const data = await getRealTimeIntel();
+      console.log("AI DATA:", data);
 
 if (data && data.length > 0) {
   for (const item of data) {
