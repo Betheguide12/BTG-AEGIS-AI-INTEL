@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getOracleBriefing, getRealTimeIntel } from './services/geminiService';
+import { aegisCron } from './services/cron';
 
 // --- TYPES ---
 interface IntelLog {
@@ -110,51 +111,51 @@ export default function App() {
     return { x, y };
   };
 
-  // Real-time Intel Fetching
-  const fetchIntel = async () => {
-    const realIntel = await getRealTimeIntel();
-    if (realIntel && realIntel.length > 0) {
-      const highSeverityItems = realIntel.filter((item: any) => 
-        item.severity === 'CRITICAL' || item.severity === 'HIGH'
-      );
-      
-      if (highSeverityItems.length > 0) {
-        const primaryAlert = {
-          ...highSeverityItems[0],
-          id: Math.random().toString(36).substring(7),
-          timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-        };
-        setCurrentAlert(primaryAlert);
-        playAlertSound();
-        sendBrowserNotification(primaryAlert);
-      }
-
-      setLogs(prev => {
-        const newLogs = realIntel.map((item: any) => ({
-          ...item,
-          id: Math.random().toString(36).substring(7),
-          timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-        }));
-        const combined = [...newLogs, ...prev].slice(0, 30);
-        
-        // Calculate Predictive Threat Score
-        const score = combined.reduce((acc, log) => {
-          const weights = { CRITICAL: 15, HIGH: 8, MEDIUM: 4, LOW: 2 };
-          return acc + (weights[log.severity as keyof typeof weights] || 0);
-        }, 0);
-        setPredictiveScore(Math.min(100, Math.max(10, score * 0.8)));
-        
-        return combined;
-      });
-      setLastSync(new Date().toLocaleTimeString());
-      setThreatLevel(prev => Math.min(100, Math.max(5, prev + (Math.random() > 0.5 ? 2.5 : -1.5))));
-    }
-  };
-
   useEffect(() => {
-    fetchIntel();
-    const interval = setInterval(fetchIntel, 120000); // 2 min sync
-    return () => clearInterval(interval);
+    aegisCron.start();
+    const unsubscribe = aegisCron.subscribe((realIntel) => {
+      if (realIntel && realIntel.length > 0) {
+        // Check for high severity in new items
+        const highSeverityItems = realIntel.filter((item: any) => 
+          item.severity === 'CRITICAL' || item.severity === 'HIGH'
+        );
+        
+        if (highSeverityItems.length > 0) {
+          const primaryAlert = {
+            ...highSeverityItems[0],
+            id: Math.random().toString(36).substring(7),
+            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+          };
+          setCurrentAlert(primaryAlert);
+          playAlertSound();
+          sendBrowserNotification(primaryAlert);
+        }
+
+        setLogs(prev => {
+          const newLogs = realIntel.map((item: any) => ({
+            ...item,
+            id: Math.random().toString(36).substring(7),
+            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+          }));
+          const combined = [...newLogs, ...prev].slice(0, 30);
+          
+          const score = combined.reduce((acc, log) => {
+            const weights = { CRITICAL: 15, HIGH: 8, MEDIUM: 4, LOW: 2 };
+            return acc + (weights[log.severity as keyof typeof weights] || 0);
+          }, 0);
+          setPredictiveScore(Math.min(100, Math.max(10, score * 0.8)));
+          
+          return combined;
+        });
+        setLastSync(new Date().toLocaleTimeString());
+        setThreatLevel(prev => Math.min(100, Math.max(5, prev + (Math.random() > 0.5 ? 2.5 : -1.5))));
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      aegisCron.stop();
+    };
   }, []);
 
   const handleOracleRequest = async () => {
@@ -343,7 +344,7 @@ export default function App() {
                 <Radio className="w-3 h-3 text-aegis-cyan" />
                 <span className="text-[10px] font-mono font-bold text-white uppercase tracking-[0.2em]">Intel Stream</span>
               </div>
-              <button onClick={fetchIntel} className="p-1 hover:bg-white/5 rounded transition-colors group">
+              <button onClick={() => aegisCron.start()} className="p-1 hover:bg-white/5 rounded transition-colors group">
                 <Radar className="w-3 h-3 text-slate-600 group-hover:text-aegis-cyan" />
               </button>
             </div>

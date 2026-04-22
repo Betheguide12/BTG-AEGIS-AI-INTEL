@@ -5,11 +5,18 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-const keyVar = process.env.GEMINI_API_KEY || (process as any).env?.Ge || (process as any).env?.GE || "";
+declare global {
+  const __AEGIS_KEY__: string;
+}
+
+const keyVar = typeof __AEGIS_KEY__ !== 'undefined' ? __AEGIS_KEY__ : (process.env.GEMINI_API_KEY || "");
 const ai = new GoogleGenAI({ apiKey: keyVar });
 
 export async function getRealTimeIntel() {
-  if (!keyVar) return null;
+  if (!keyVar) {
+    console.warn("AEGIS CORE: API Key missing. Ensure GEMINI_API_KEY, Ge, or GE is set in deployment config.");
+    return null;
+  }
 
   try {
     const response = await ai.models.generateContent({
