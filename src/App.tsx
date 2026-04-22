@@ -113,6 +113,8 @@ export default function App() {
 
   useEffect(() => {
     aegisCron.start();
+    import { useEffect } from "react";
+import { aegisCron } from "./services/cron";
     const unsubscribe = aegisCron.subscribe((realIntel) => {
       if (realIntel && realIntel.length > 0) {
         // Check for high severity in new items
