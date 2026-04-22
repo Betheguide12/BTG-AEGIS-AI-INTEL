@@ -5,7 +5,7 @@
  */
 
 import { getRealTimeIntel } from './geminiService';
-import supabase from '../supabase';
+
 export type SyncCallback = (data: any[]) => void;
 
 class AegisCron {
@@ -48,31 +48,8 @@ class AegisCron {
   private async execute() {
     try {
       const data = await getRealTimeIntel();
-      alert("CRON IS RUNNING");
-alert("DATA RECEIVED:");
-alert(JSON.stringify(data));
-      console.log("AI DATA:", data);
-if (data && data.length > 0) {
-  for (const item of data) {
-    console.log("Saving item:", item);
-
-    const { error } = await supabase.from('alerts').insert([
-      {
-        message: item.title,
-        severity: item.risk || "medium",
-        created_at: new Date(item.time || Date.now()).toISOString()
-      }
-    ]);
-
-    if (error) {
-      console.error("SUPABASE ERROR:", error);
-    } else {
-      console.log("Saved successfully");
-    }
-  }
-}
-
-this.subscribers.forEach(sub => sub(data));
+      if (data && data.length > 0) {
+        this.subscribers.forEach(sub => sub(data));
       }
     } catch (err) {
       console.error('[AEGIS_CRON] Intel Sync Failed:', err);

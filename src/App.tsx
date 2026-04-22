@@ -7,8 +7,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import { useEffect } from "react";
-import { aegisCron } from "./services/cron";
+
 import { useState, useEffect, useRef } from 'react';
 import { 
   Shield, 
@@ -42,17 +41,6 @@ interface IntelLog {
 }
 
 export default function App() {
-  useEffect(() => {
-  aegisCron.start();
-  return () => {
-    aegisCron.stop();
-  };
-}, []);
-
-  return (
-    // your UI
-  );
-}
   const [logs, setLogs] = useState<IntelLog[]>([]);
   const [threatLevel, setThreatLevel] = useState(14.2);
   const [predictiveScore, setPredictiveScore] = useState(25.0);
@@ -125,8 +113,6 @@ export default function App() {
 
   useEffect(() => {
     aegisCron.start();
-    import { useEffect } from "react";
-import { aegisCron } from "./services/cron";
     const unsubscribe = aegisCron.subscribe((realIntel) => {
       if (realIntel && realIntel.length > 0) {
         // Check for high severity in new items

@@ -9,7 +9,8 @@ declare global {
   const __AEGIS_KEY__: string;
 }
 
-const keyVar = typeof __AEGIS_KEY__ !== 'undefined' ? __AEGIS_KEY__ : (process.env.GEMINI_API_KEY || "");
+// Aegis-Safe Key Resolution: Prevents "process is not defined" crash in standard browsers
+const keyVar = typeof __AEGIS_KEY__ !== 'undefined' ? __AEGIS_KEY__ : "";
 const ai = new GoogleGenAI({ apiKey: keyVar });
 
 export async function getRealTimeIntel() {

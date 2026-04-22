@@ -8,7 +8,8 @@ export default defineConfig(({mode}) => {
   return {
     plugins: [react(), tailwindcss()],
     define: {
-      '__AEGIS_KEY__': JSON.stringify(env.GEMINI_API_KEY || env.Ge || env.GE || env.VITE_GEMINI_API_KEY),
+      // Ensure we always provide a string to avoid 'undefined' code replacement crashes
+      '__AEGIS_KEY__': JSON.stringify(env.GEMINI_API_KEY || env.Ge || env.GE || env.VITE_GEMINI_API_KEY || ""),
     },
     resolve: {
       alias: {
