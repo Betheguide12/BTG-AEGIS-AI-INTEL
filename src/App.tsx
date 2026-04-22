@@ -27,7 +27,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getOracleBriefing, getRealTimeIntel } from './services/geminiService';
+import { getOracleBriefing, getRealTimeIntel, isAegisOnline } from './services/geminiService';
 import { aegisCron } from './services/cron';
 
 // --- TYPES ---
@@ -307,8 +307,10 @@ export default function App() {
           <div className="h-4 w-px bg-slate-800 hidden xs:block" />
           <div className="hidden lg:flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] font-mono text-slate-400 tracking-widest uppercase">Global_Senses_Secure</span>
+              <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isAegisOnline() ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className={`text-[10px] font-mono tracking-widest uppercase ${isAegisOnline() ? 'text-slate-400' : 'text-red-500'}`}>
+                {isAegisOnline() ? 'Global_Senses_Secure' : 'AEGIS_OFFLINE_KEY_MISSING'}
+              </span>
             </div>
           </div>
         </div>

@@ -13,7 +13,7 @@ class AegisCron {
   private subscribers: SyncCallback[] = [];
   private isRunning: boolean = false;
 
-  constructor(private intervalMs: number = 300000) {} // Default 5 mins
+  constructor(private intervalMs: number = 45000) {} // Reduced from 5m to 45s for real-time feel
 
   subscribe(callback: SyncCallback) {
     this.subscribers.push(callback);
@@ -22,18 +22,18 @@ class AegisCron {
     };
   }
 
-  start() {
+  async start() {
     if (this.isRunning) return;
     this.isRunning = true;
     
-    // Initial fetch
-    this.execute();
+    console.log(`[AEGIS_CRON] Background Intel Sync Triggered. Interval: ${this.intervalMs}ms`);
+    
+    // Initial fetch - Essential for immediate live view
+    await this.execute();
     
     this.intervalId = window.setInterval(() => {
       this.execute();
     }, this.intervalMs);
-    
-    console.log(`[AEGIS_CRON] Background Intel Sync Started. Interval: ${this.intervalMs}ms`);
   }
 
   stop() {

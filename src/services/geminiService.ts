@@ -13,6 +13,8 @@ declare global {
 const keyVar = typeof __AEGIS_KEY__ !== 'undefined' ? __AEGIS_KEY__ : "";
 const ai = new GoogleGenAI({ apiKey: keyVar });
 
+export const isAegisOnline = () => !!keyVar;
+
 export async function getRealTimeIntel() {
   if (!keyVar) {
     console.warn("AEGIS CORE: API Key missing. Ensure GEMINI_API_KEY, Ge, or GE is set in deployment config.");
