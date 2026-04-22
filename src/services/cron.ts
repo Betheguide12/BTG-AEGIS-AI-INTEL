@@ -48,7 +48,7 @@ class AegisCron {
   private async execute() {
     try {
       const data = await getRealTimeIntel();
-      alert("CRON RUNNING");
+      alert("CRON IS RUNNING");
 alert("DATA RECEIVED:");
 alert(JSON.stringify(data));
       console.log("AI DATA:", data);
