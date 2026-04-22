@@ -52,16 +52,23 @@ class AegisCron {
 
 if (data && data.length > 0) {
   for (const item of data) {
-    await supabase.from('alerts').insert([
+    console.log("Saving item:", item);
+
+    const { error } = await supabase.from('alerts').insert([
       {
         message: item.title,
         severity: item.risk || "medium",
         created_at: new Date(item.time || Date.now()).toISOString()
       }
     ]);
+
+    if (error) {
+      console.error("SUPABASE ERROR:", error);
+    } else {
+      console.log("Saved successfully");
+    }
   }
 }
-
 this.subscribers.forEach(sub => sub(data));
       }
     } catch (err) {
