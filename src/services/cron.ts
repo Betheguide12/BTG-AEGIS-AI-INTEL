@@ -48,8 +48,10 @@ class AegisCron {
   private async execute() {
     try {
       const data = await getRealTimeIntel();
+      alert("CRON RUNNING");
+alert("DATA RECEIVED:");
+alert(JSON.stringify(data));
       console.log("AI DATA:", data);
-
 if (data && data.length > 0) {
   for (const item of data) {
     console.log("Saving item:", item);
@@ -69,6 +71,7 @@ if (data && data.length > 0) {
     }
   }
 }
+
 this.subscribers.forEach(sub => sub(data));
       }
     } catch (err) {
