@@ -44,6 +44,8 @@ export default function App() {
   const [logs, setLogs] = useState<IntelLog[]>([]);
   const [threatLevel, setThreatLevel] = useState(14.2);
   const [predictiveScore, setPredictiveScore] = useState(25.0);
+  const [isCoolingDown, setIsCoolingDown] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
   const [oracleActive, setOracleActive] = useState(false);
   const [briefing, setBriefing] = useState<string | null>(null);
   const [loadingBriefing, setLoadingBriefing] = useState(false);
@@ -132,7 +134,17 @@ export default function App() {
 
   useEffect(() => {
     aegisCron.start();
+    
+    // Check initial connectivity
+    isAegisOnline().then(setIsOnline);
+
+    const interval = setInterval(() => {
+      setIsCoolingDown(aegisCron.isCoolingDown());
+      isAegisOnline().then(setIsOnline);
+    }, 10000); // 10s checks
+
     const unsubscribe = aegisCron.subscribe((realIntel) => {
+      setIsCoolingDown(false); // If we got data, we're not cooling down
       if (realIntel && realIntel.length > 0) {
         // Check for high severity in new items
         const highSeverityItems = realIntel.filter((item: any) => 
@@ -307,9 +319,13 @@ export default function App() {
           <div className="h-4 w-px bg-slate-800 hidden xs:block" />
           <div className="hidden lg:flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isAegisOnline() ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className={`text-[10px] font-mono tracking-widest uppercase ${isAegisOnline() ? 'text-slate-400' : 'text-red-500'}`}>
-                {isAegisOnline() ? 'Global_Senses_Secure' : 'AEGIS_OFFLINE_KEY_MISSING'}
+              <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                isCoolingDown ? 'bg-amber-500' : (isOnline ? 'bg-green-500' : 'bg-red-500')
+              }`} />
+              <span className={`text-[10px] font-mono tracking-widest uppercase ${
+                isCoolingDown ? 'text-amber-500' : (isOnline ? 'text-slate-400' : 'text-red-500')
+              }`}>
+                {isCoolingDown ? 'QUOTA_COOLDOWN_ACTIVE' : (isOnline ? 'Global_Senses_Secure' : 'AEGIS_OFFLINE_SECURE_KEY_MISSING')}
               </span>
             </div>
           </div>

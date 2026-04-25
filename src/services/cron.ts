@@ -12,8 +12,10 @@ class AegisCron {
   private intervalId: number | null = null;
   private subscribers: SyncCallback[] = [];
   private isRunning: boolean = false;
+  private cooldownActive: boolean = false;
+  private cooldownTimer: number | null = null;
 
-  constructor(private intervalMs: number = 45000) {} // Reduced from 5m to 45s for real-time feel
+  constructor(private intervalMs: number = 120000) {} // Optimized to 2 mins to respect API quotas
 
   subscribe(callback: SyncCallback) {
     this.subscribers.push(callback);
@@ -28,12 +30,18 @@ class AegisCron {
     
     console.log(`[AEGIS_CRON] Background Intel Sync Triggered. Interval: ${this.intervalMs}ms`);
     
-    // Initial fetch - Essential for immediate live view
+    // Initial fetch
     await this.execute();
+    
+    this.setupInterval();
+  }
+
+  private setupInterval(customInterval?: number) {
+    if (this.intervalId) window.clearInterval(this.intervalId);
     
     this.intervalId = window.setInterval(() => {
       this.execute();
-    }, this.intervalMs);
+    }, customInterval || this.intervalMs);
   }
 
   stop() {
@@ -41,19 +49,57 @@ class AegisCron {
       window.clearInterval(this.intervalId);
       this.intervalId = null;
     }
+    if (this.cooldownTimer) {
+      window.clearTimeout(this.cooldownTimer);
+      this.cooldownTimer = null;
+    }
     this.isRunning = false;
     console.log('[AEGIS_CRON] Background Intel Sync Stopped.');
   }
 
   private async execute() {
+    if (this.cooldownActive) return;
+
     try {
       const data = await getRealTimeIntel();
       if (data && data.length > 0) {
         this.subscribers.forEach(sub => sub(data));
+      } else if (data === null) {
+        // This usually means a fatal error or 429 handled by service
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[AEGIS_CRON] Intel Sync Failed:', err);
+      
+      // If we detect a rate limit, enter cooldown mode
+      if (err.message?.includes('429') || err.message?.includes('quota')) {
+        this.activateCooldown();
+      }
     }
+  }
+
+  private activateCooldown() {
+    if (this.cooldownActive) return;
+    
+    this.cooldownActive = true;
+    const cooldownDuration = 300000; // 5 minute forced silence
+    
+    console.warn(`[AEGIS_CRON] QUOTA_EXHAUSTED. Entering 5-minute cooldown.`);
+    
+    if (this.intervalId) {
+      window.clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+
+    this.cooldownTimer = window.setTimeout(() => {
+      this.cooldownActive = false;
+      this.cooldownTimer = null;
+      console.log(`[AEGIS_CRON] Cooldown expired. Resuming sync...`);
+      this.start();
+    }, cooldownDuration);
+  }
+
+  public isCoolingDown() {
+    return this.cooldownActive;
   }
 }
 
